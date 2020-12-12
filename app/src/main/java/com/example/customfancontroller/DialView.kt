@@ -1,9 +1,11 @@
 package com.example.customfancontroller
 
 import android.content.Context
+import android.content.res.Resources
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.withStyledAttributes
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -12,6 +14,13 @@ private enum class FanSpeed(val label: Int) {
     LOW(R.string.fan_low),
     MEDIUM(R.string.fan_medium),
     HIGH(R.string.fan_high);
+    fun next() = when (this) {
+        OFF -> LOW
+        LOW -> MEDIUM
+        MEDIUM -> HIGH
+        HIGH -> OFF
+    }
+
 }
 
 private const val RADIUS_OFFSET_LABEL = 30
@@ -22,6 +31,29 @@ class DialView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
+
+    private var fanSpeedLowColor = 0
+    private var fanSpeedMediumColor = 0
+    private var fanSeedMaxColor = 0
+    init {
+        isClickable=true
+        //custom attribute
+        context.withStyledAttributes(attrs, R.styleable.DialView) {
+            fanSpeedLowColor = getColor(R.styleable.DialView_fanColor1, 0)
+            fanSpeedMediumColor = getColor(R.styleable.DialView_fanColor2, 0)
+            fanSeedMaxColor = getColor(R.styleable.DialView_fanColor3, 0)
+        }
+    }
+
+    override fun performClick(): Boolean {
+        if (super.performClick()) return true
+
+        fanSpeed = fanSpeed.next()
+        contentDescription = resources.getString(fanSpeed.label)
+
+        invalidate()
+        return true
+    }
 
     private var radius = 0.0f                   // Radius of the circle.
     private var fanSpeed = FanSpeed.OFF         // The active selection.
@@ -55,7 +87,7 @@ class DialView @JvmOverloads constructor(
         // Draw the indicator circle.
         val markerRadius = radius + RADIUS_OFFSET_INDICATOR
         pointPosition.computeXYForSpeed(fanSpeed, markerRadius)
-        paint.color = Color.BLACK
+        paint.color = context.getColor(R.color.design_default_color_on_primary)
         canvas.drawCircle(pointPosition.x, pointPosition.y, radius/12, paint)
 
         // Draw the text labels.
